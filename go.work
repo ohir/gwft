@@ -1,0 +1,9 @@
+go 1.17
+
+directory (
+	server
+	client
+	protocol
+	app
+)
+
