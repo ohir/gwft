@@ -39,3 +39,11 @@ find . -name config -exec sed -ire "s#ohir/#yoursGH/#" {} \;
 git submodule foreach 'sed -ire "s#ohir/#yoursGH/#g" go.mod'
 ```
 
+The `depver` script is used to operate on subrepos versions in concert.
+Just do `./depver` for usage help.
+
+---
+Notes:
+Version v0.1.8 is last in the 0.1.x series that have individual replaces in respective go.mods.
+Series v0.2.x move all replaces to the `go.work`
+
