@@ -44,6 +44,6 @@ Just do `./depver` for usage help.
 
 ---
 Notes:
-Version v0.1.8 is last in the 0.1.x series that have individual replaces in respective go.mods.
+Version v0.1.9 is for now last in the 0.1.x series that have individual replaces in respective go.mods.
 Series v0.2.x move all replaces to the `go.work`
 
