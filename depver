@@ -1,0 +1,125 @@
+#!/bin/bash
+# Normally this script should be run BEFORE edits, but currently compile in
+# workspace mode will NOT proceed if upstream repo has no tag that appears
+# in the respective go.mod, so we need to ran it AFTER (and inbetween) edits
+
+fp=./modver;
+echo '------------------------------------------------------------------'
+if [[ $1 = [+-][0-9] ]]; then
+	if [ ! -f $fp ]; then
+		echo "$fp not present! Do:"
+		echo -e "\techo 1 > $fp\nto initialize counter"
+		exit 1
+	fi
+	if [ -f $fp.major ]; then maj=`cat $fp.major`; fi
+	if [ -f $fp.minor ]; then min=`cat $fp.minor`; fi
+	pn=$((`cat $fp` $1));
+	if [[ $pn < 1 ]]; then
+		echo -e "ERROR:\tChanged patch version must be positive!\n\tIt became $pn now!"
+		exit 1
+	fi
+	echo $pn > $fp
+	ver="v${maj:=0}.${min:=0}.$pn"
+	echo "Changing dependencies version to $ver"
+else
+	echo "Usage: $0 ±0..9 [[-commit \"commit message\"|def] [[-push] [-tag]]]"
+	echo "Files: [$fp.major] [$fp.minor] $fp (patch)."
+	exit 1
+fi
+
+# check arguments
+for d in protocol client server app; do
+	if [ ! -f ./$d/stamp.go ]; then
+	 echo "Directories: protocol/ client/ server/ app/ each must contain stamp.go file!"
+	 echo "Error: $d/stamp.go NOT found!"
+	 exit 1
+	fi
+done
+if [[ "$2" != "" ]] && [[ "$2" != "-commit" || -z "$3" ]]; then
+	echo "Usage: $0 +|-number -commit \"commit message\"|def [-push [-tag]]"
+	exit 1
+fi
+if [[ "$4" != "" && "$4" != "-push" ]]; then
+	echo "Usage: $0 +|-number commit \"commit message\"|def -push [-tag]"
+	exit 1
+fi
+if [[ "$5" != "" && "$5" != "-tag" ]]; then
+	echo "Usage: $0 +|-number commit \"commit message\"|def -push -tag"
+	exit 1
+fi
+
+# protocol has no dependencies
+# server
+cat >server/go.mod <<EOF
+module example.com/mS
+
+go 1.16
+
+require example.com/mP $ver // protocol
+
+replace example.com/mP => github.com/ohir/gwft-protocol $ver
+EOF
+
+# client
+cat >client/go.mod <<EOF
+module example.com/mC
+
+go 1.16
+
+require example.com/mP $ver // protocol
+
+replace example.com/mP => github.com/ohir/gwft-protocol $ver
+EOF
+
+# app
+cat >app/go.mod <<EOF
+module example.com/app
+
+go 1.16
+
+require (
+	example.com/mC $ver // client
+	example.com/mP $ver // protocol
+	example.com/mS $ver // server
+)
+
+replace (
+	example.com/mC => github.com/ohir/gwft-client $ver
+	example.com/mP => github.com/ohir/gwft-protocol $ver
+	example.com/mS => github.com/ohir/gwft-server $ver
+)
+
+//replace ( // we would use before go.work mode
+//	example.com/mC => ../client
+//	example.com/mP => ../protocol
+//	example.com/mS => ../server
+//)
+EOF
+
+# foreach subrepo
+for d in protocol client server app; do
+	cd $d
+	if [[ $0 != "./depver" ]]; then print="echo $d:"; fi
+	if [ -f ./$d/stamp.go ]; then rm stamp.go; fi # bsd would need >!
+	if [[ "$d" == "app" ]]; then
+		echo -e "package main\n\nconst Vstamp string = \"$ver\"\n" > stamp.go
+	else
+		echo -e "package $d\n\nconst Vstamp string = \"$ver\"\n" > stamp.go
+	fi
+	# 3-commit 4-push 5-tag & push tag
+	if [[ "$3" == "def" ]]; then
+		$print git commit -a -m "Prepare to edit, bump version to $ver, register in stamp.go"
+	elif [[ "$3" != "" ]]; then
+		$print git commit -a -m "\"$3\""
+	fi
+	if [[ "$4" != "" ]]; then
+		$print git push
+	fi
+	if [[ "$5" != "" ]]; then
+		$print git tag -d $ver
+		$print git tag $ver
+		$print git push origin :$ver
+		$print git push origin $ver
+	fi
+	cd ..
+done
