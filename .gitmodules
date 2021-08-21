@@ -1,26 +1,26 @@
 [submodule "protocol"]
-	branch = .             # track project branch
+	branch = trunk         # track project branch
 	shallow = false        # get HEADs only, 
 	ignore = untracked     # show local changes
 	path = protocol
 	url = https://github.com/ohir/gwft-protocol.git
 
 [submodule "client"]
-	branch = .
+	branch = trunk
 	shallow = false
 	ignore = untracked
 	path = client
 	url = https://github.com/ohir/gwft-client.git
 
 [submodule "server"]
-	branch = .
+	branch = trunk
 	shallow = false
 	ignore = untracked
 	path = server
 	url = https://github.com/ohir/gwft-server.git
 
 [submodule "app"]
-	branch = .
+	branch = trunk
 	shallow = false 
 	ignore = untracked
 	path = app
