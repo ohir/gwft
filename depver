@@ -18,9 +18,13 @@ if [[ $1 = [+-][0-9] ]]; then
 		echo -e "ERROR:\tChanged patch version must be positive!\n\tIt became $pn now!"
 		exit 1
 	fi
-	echo $pn > $fp
 	ver="v${maj:=0}.${min:=0}.$pn"
-	echo "Changing dependencies version to $ver"
+	if [[ $0 == "./depver" ]]; then
+		echo $pn > $fp
+		echo "Changing dependencies version to $ver"
+	else
+		echo "Dry run! NOT changing dependencies version to $ver"
+	fi
 else
 	echo "Usage: $0 ±0..9 [[-commit \"commit message\"|def] [[-push] [-tag]]]"
 	echo "Files: [$fp.major] [$fp.minor] $fp (patch)."
@@ -48,6 +52,8 @@ if [[ "$5" != "" && "$5" != "-tag" ]]; then
 	exit 1
 fi
 
+# update go.mods (only in writeable)
+if [[ $0 == "./depver" ]]; then
 # protocol has no dependencies
 # server
 cat >server/go.mod <<EOF
@@ -95,16 +101,20 @@ replace (
 //	example.com/mS => ../server
 //)
 EOF
+fi # if [[ $0 == "./depver" ]]
 
 # foreach subrepo
 for d in protocol client server app; do
 	cd $d
-	if [[ $0 != "./depver" ]]; then print="echo $d:"; fi
-	if [ -f ./$d/stamp.go ]; then rm stamp.go; fi # bsd would need >!
-	if [[ "$d" == "app" ]]; then
-		echo -e "package main\n\nconst Vstamp string = \"$ver\"\n" > stamp.go
+	if [[ $0 != "./depver" ]]; then
+		print="echo $d:"
 	else
-		echo -e "package $d\n\nconst Vstamp string = \"$ver\"\n" > stamp.go
+		if [ -f ./$d/stamp.go ]; then rm stamp.go; fi # bsd would need >!
+		if [[ "$d" == "app" ]]; then
+			echo -e "package main\n\nconst Vstamp string = \"$ver\"\n" > stamp.go
+		else
+			echo -e "package $d\n\nconst Vstamp string = \"$ver\"\n" > stamp.go
+		fi
 	fi
 	# 3-commit 4-push 5-tag & push tag
 	if [[ "$3" == "def" ]]; then
