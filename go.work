@@ -7,3 +7,14 @@ directory (
 	app
 )
 
+replace ( // working at cloned repos
+	example.com/mC => github.com/ohir/gwft-client v0.2.0
+	example.com/mP => github.com/ohir/gwft-protocol v0.2.0
+	example.com/mS => github.com/ohir/gwft-server v0.2.0
+)
+
+//replace ( // bootstrap new test
+//	example.com/mC => client
+//	example.com/mP => protocol
+//	example.com/mS => server
+//)

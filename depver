@@ -14,7 +14,7 @@ if [[ $1 = [+-][0-9] ]]; then
 	if [ -f $fp.major ]; then maj=`cat $fp.major`; fi
 	if [ -f $fp.minor ]; then min=`cat $fp.minor`; fi
 	pn=$((`cat $fp` $1));
-	if [[ $pn < 1 ]]; then
+	if [[ $pn < 0 ]]; then
 		echo -e "ERROR:\tChanged patch version must be positive!\n\tIt became $pn now!"
 		exit 1
 	fi
@@ -54,6 +54,29 @@ fi
 
 # update go.mods (only in writeable)
 if [[ $0 == "./depver" ]]; then
+# go.work
+cat >go.work <<EOF
+go 1.17
+
+directory (
+	server
+	client
+	protocol
+	app
+)
+
+replace ( // working at cloned repos
+	example.com/mC => github.com/ohir/gwft-client $ver
+	example.com/mP => github.com/ohir/gwft-protocol $ver
+	example.com/mS => github.com/ohir/gwft-server $ver
+)
+
+//replace ( // bootstrap new test
+//	example.com/mC => client
+//	example.com/mP => protocol
+//	example.com/mS => server
+//)
+EOF
 # protocol has no dependencies
 # server
 cat >server/go.mod <<EOF
@@ -62,8 +85,6 @@ module example.com/mS
 go 1.16
 
 require example.com/mP $ver // protocol
-
-replace example.com/mP => github.com/ohir/gwft-protocol $ver
 EOF
 
 # client
@@ -73,8 +94,6 @@ module example.com/mC
 go 1.16
 
 require example.com/mP $ver // protocol
-
-replace example.com/mP => github.com/ohir/gwft-protocol $ver
 EOF
 
 # app
@@ -88,18 +107,6 @@ require (
 	example.com/mP $ver // protocol
 	example.com/mS $ver // server
 )
-
-replace (
-	example.com/mC => github.com/ohir/gwft-client $ver
-	example.com/mP => github.com/ohir/gwft-protocol $ver
-	example.com/mS => github.com/ohir/gwft-server $ver
-)
-
-//replace ( // we would use before go.work mode
-//	example.com/mC => ../client
-//	example.com/mP => ../protocol
-//	example.com/mS => ../server
-//)
 EOF
 fi # if [[ $0 == "./depver" ]]
 
@@ -118,7 +125,7 @@ for d in protocol client server app; do
 	fi
 	# 3-commit 4-push 5-tag & push tag
 	if [[ "$3" == "def" ]]; then
-		$print git commit -a -m "Prepare to edit, bump version to $ver, register in stamp.go"
+		$print git commit -a -m "Prepare to edit, change version to $ver, register in stamp.go"
 	elif [[ "$3" != "" ]]; then
 		$print git commit -a -m "\"$3\""
 	fi
