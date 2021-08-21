@@ -65,17 +65,17 @@ directory (
 	app
 )
 
-replace ( // working at cloned repos
-	example.com/mC => github.com/ohir/gwft-client $ver
-	example.com/mP => github.com/ohir/gwft-protocol $ver
-	example.com/mS => github.com/ohir/gwft-server $ver
+replace ( // bootstrap new test
+	example.com/mC => ./client
+	example.com/mP => ./protocol
+	example.com/mS => ./server
 )
 
-//replace ( // bootstrap new test
-//	example.com/mC => client
-//	example.com/mP => protocol
-//	example.com/mS => server
-//)
+// replace ( // working at cloned repos
+//	example.com/mC => github.com/ohir/gwft-client $ver
+//	example.com/mP => github.com/ohir/gwft-protocol $ver
+//	example.com/mS => github.com/ohir/gwft-server $ver
+// )
 EOF
 # protocol has no dependencies
 # server
